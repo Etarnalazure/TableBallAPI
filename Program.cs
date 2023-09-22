@@ -16,6 +16,7 @@ builder.Services.AddDbContext<TableBallContext>(opts =>
 // Register repositories for each model
 builder.Services.AddScoped<IRepository<PlayerBaseModel>, Repository<PlayerBaseModel>>();
 builder.Services.AddScoped<IRepository<BattleBaseModel>, Repository<BattleBaseModel>>();
+builder.Services.AddScoped<IRepository<TeamBaseModel>, Repository<TeamBaseModel>>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

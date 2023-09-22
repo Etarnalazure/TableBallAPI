@@ -10,9 +10,9 @@ namespace TableBallAPI.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid UniqueBattleGuid { get; set; }
         //Player One in the team battle, uses the unique guid key in PlayerBaseModel
-        public Guid PlayerOneGuid{ get; set; }
+        public Guid TeamOneGuid{ get; set; }
         //Player Two in the team battle, uses the unique guid key in PlayerBaseModel
-        public Guid PlayerTwoGuid{ get; set; }
+        public Guid TeamTwoGuid{ get; set; }
         //Winner of the battle
         public Guid WinnerGuid { get; set; }
         //When the battle occured

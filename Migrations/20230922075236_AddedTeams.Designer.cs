@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TableBallAPI.DatabaseContext;
 
@@ -11,9 +12,11 @@ using TableBallAPI.DatabaseContext;
 namespace TableBallAPI.Migrations
 {
     [DbContext(typeof(TableBallContext))]
-    partial class TableBallContextModelSnapshot : ModelSnapshot
+    [Migration("20230922075236_AddedTeams")]
+    partial class AddedTeams
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

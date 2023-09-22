@@ -13,18 +13,32 @@ namespace TableBallAPI.Controllers
     {
         private readonly IRepository<PlayerBaseModel> _playerRepository;
         private readonly IRepository<BattleBaseModel> _battleRepository;
-        public MasterController(IRepository<PlayerBaseModel> playerRepository, IRepository<BattleBaseModel> battleRepository)
+        private readonly IRepository<TeamBaseModel> _teamRepository;
+        public MasterController(IRepository<PlayerBaseModel> playerRepository, IRepository<BattleBaseModel> battleRepository, IRepository<TeamBaseModel> teamRepository)
         {
             _playerRepository = playerRepository;
             _battleRepository = battleRepository;
+            _teamRepository = teamRepository;
         }
 
         #region Player
 
-        [HttpGet("players")]
+        [HttpGet("players/GetPlayers")]
         public IEnumerable<PlayerBaseModel> GetPlayers()
         {
             return _playerRepository.GetAll();
+        }
+        [HttpGet("players/OrderBy/{descendingOrder}")]
+        public IEnumerable<PlayerBaseModel> GetPlayers(bool descendingOrder)
+        {
+            if (descendingOrder) 
+            {
+                return _playerRepository.GetAll().OrderBy(o => o.Handicap);
+            }
+            else 
+            { 
+                return _playerRepository.GetAll().OrderByDescending(o => o.Handicap);
+            }
         }
 
         [HttpGet("players/{id}")]
@@ -37,7 +51,17 @@ namespace TableBallAPI.Controllers
             return Ok(player);
         }
 
-        [HttpPost("players")]
+        [HttpDelete("players/Delete/{id}")]
+        public IActionResult DeletePlayer(Guid id)
+        {
+            var player = _playerRepository.GetById(id);
+            if (player == null)
+                return NotFound();
+            _playerRepository.Delete(id);
+            return Ok(player);
+        }
+
+        [HttpPost("players/CreatePlayer")]
         public IActionResult CreatePlayer([FromBody] PlayerBaseModel player)
         {
             //Ensure it does not use swagger default
@@ -72,7 +96,8 @@ namespace TableBallAPI.Controllers
             // Return the updated player
             return CreatedAtAction(nameof(GetPlayer), existingPlayer);
         }
-        [HttpGet("players/search/{searchTerm}")]
+
+        [HttpGet("players/Search/{searchTerm}")]
         public IActionResult GetPlayer(string searchTerm)
         {
             var player = _playerRepository.GetBySearchTerm(searchTerm);
@@ -84,15 +109,52 @@ namespace TableBallAPI.Controllers
 
         #endregion
 
+
+        #region Teams
+        [HttpGet("teams/GetTeams")]
+        public IEnumerable<TeamBaseModel> GetTeams()
+        {
+            return _teamRepository.GetAll();
+        }
+
+        [HttpPost("teams/CreateTeam")]
+        public IActionResult CreateTeam([FromBody] TeamBaseModel team)
+        {
+          
+            if(team.PlayerOne != team.PlayerTwo) { 
+                // Check if TeamTwoGuid exists in either TeamOneGuid or TeamTwoGuid
+                if (_teamRepository.GetAll().Any(existingTeam =>
+                    existingTeam.PlayerOne == team.PlayerTwo || existingTeam.PlayerTwo == team.PlayerTwo))
+                {
+                    return BadRequest("A team with TeamTwoGuid already exists.");
+                }
+
+                // Check if TeamOneGuid exists in either TeamOneGuid or TeamTwoGuid
+                if (_teamRepository.GetAll().Any(existingTeam =>
+                    existingTeam.PlayerOne == team.PlayerOne || existingTeam.PlayerTwo == team.PlayerOne))
+                {
+                    return BadRequest("A team with TeamOneGuid already exists.");
+                }
+                //Ensure it does not use swagger default
+                team.UniqueTeamGuid = Guid.NewGuid();
+            
+                _teamRepository.Add(team);
+                return CreatedAtAction(nameof(GetTeams), team);
+            }
+            return BadRequest();
+        }
+        #endregion
+
+
         #region Battles
 
-        [HttpGet("battles/get")]
+        [HttpGet("battles/Get")]
         public IEnumerable<BattleBaseModel> GetBattles()
         {
             return _battleRepository.GetAll();
         }
 
-        [HttpGet("battles/get/{id}")]
+        [HttpGet("battles/GetById/{id}")]
         public IActionResult GetBattle(Guid id)
         {
             var battle = _battleRepository.GetById(id);
@@ -102,29 +164,42 @@ namespace TableBallAPI.Controllers
             return Ok(battle);
         }
 
-        [HttpPost("battles/create")]
+        [HttpPost("battles/CreateBattle")]
         public IActionResult CreateBattle([FromBody] BattleBaseModel battle)
         {
-            if ((battle.PlayerTwoGuid != battle.PlayerOneGuid) &&
-             (battle.PlayerTwoGuid == battle.WinnerGuid || battle.PlayerOneGuid == battle.WinnerGuid))
+            if ((battle.TeamTwoGuid != battle.TeamOneGuid) &&
+             (battle.TeamTwoGuid == battle.WinnerGuid || battle.TeamOneGuid == battle.WinnerGuid))
             { 
                 //Ensure it does not use swagger default
                 battle.UniqueBattleGuid = Guid.NewGuid();
+
                 _battleRepository.Add(battle);
+                List<TeamBaseModel> teams = new List<TeamBaseModel>
+                {
+                    _teamRepository.GetById(battle.TeamOneGuid),
+                    _teamRepository.GetById(battle.TeamTwoGuid)
+                };
+
                 List<PlayerBaseModel> players = new List<PlayerBaseModel>();
-                players.Add(_playerRepository.GetById(battle.PlayerOneGuid));
-                players.Add(_playerRepository.GetById(battle.PlayerTwoGuid));
-            
-                foreach (var player in players)
-                { 
-                    if(player.UniquePlayerGuid == battle.WinnerGuid)
+
+                foreach (var team in teams)
+                {
+                    var playerOne = _playerRepository.GetById(team.PlayerOne);
+                    var playerTwo = _playerRepository.GetById(team.PlayerTwo);
+
+                    if (team.UniqueTeamGuid == battle.WinnerGuid)
                     {
-                        player.Handicap++;
+                        playerOne.Handicap++;
+                        playerTwo.Handicap++;
                     }
                     else
                     {
-                        player.Handicap--;
+                        playerOne.Handicap--;
+                        playerTwo.Handicap--;
                     }
+
+                    players.Add(playerOne);
+                    players.Add(playerTwo);
                 }
                 _playerRepository.UpdateMultiple(players);
 

@@ -22,6 +22,7 @@ namespace TableBallAPI
         {
             return _dbContext.Set<T>().Find(id);
         }
+ 
         public List<T> GetMultipleById(List<T> entities)
         {
             return _dbContext.Set<T>().Where(entity => entities.Contains(entity)).ToList();

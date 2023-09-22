@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TableBallAPI.DatabaseContext;
 
@@ -11,9 +12,11 @@ using TableBallAPI.DatabaseContext;
 namespace TableBallAPI.Migrations
 {
     [DbContext(typeof(TableBallContext))]
-    partial class TableBallContextModelSnapshot : ModelSnapshot
+    [Migration("20230922061923_UpdatedModel")]
+    partial class UpdatedModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,13 +34,10 @@ namespace TableBallAPI.Migrations
                     b.Property<DateTime>("BattleDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("TeamOneGuid")
+                    b.Property<Guid>("PlayerGuid")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("TeamTwoGuid")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("WinnerGuid")
+                    b.Property<Guid>("WinnerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("isDone")
@@ -76,15 +76,16 @@ namespace TableBallAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("PlayerOne")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("PlayerTwo")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("TeamLogo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TeamName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TeamScore")
+                        .HasColumnType("int");
 
                     b.HasKey("UniqueTeamGuid");
 
