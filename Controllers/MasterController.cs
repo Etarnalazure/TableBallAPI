@@ -121,7 +121,7 @@ namespace TableBallAPI.Controllers
         [HttpPost("team/CreateTeam")]
         public IActionResult CreateTeam([FromBody] TeamBaseModel team)
         {
-          
+          //Make sure its not the same person twice
             if(team.PlayerOne != team.PlayerTwo) { 
                 // Check if TeamTwoGuid exists in either TeamOneGuid or TeamTwoGuid
                 if (_teamRepository.GetAll().Any(existingTeam =>
@@ -161,7 +161,7 @@ namespace TableBallAPI.Controllers
 
         #region Battles
 
-        [HttpGet("battles/Get")]
+        [HttpGet("battles/GetBattles")]
         public IEnumerable<BattleBaseModel> GetBattles()
         {
             return _battleRepository.GetAll();
@@ -184,13 +184,16 @@ namespace TableBallAPI.Controllers
         [HttpPost("battles/CreateBattle")]
         public IActionResult CreateBattle([FromBody] BattleBaseModel battle)
         {
+            //Ensure its not the same team and ensure the team that won is one of the participating teams
             if ((battle.TeamTwoGuid != battle.TeamOneGuid) &&
              (battle.TeamTwoGuid == battle.WinnerGuid || battle.TeamOneGuid == battle.WinnerGuid))
             { 
                 //Ensure it does not use swagger default
                 battle.UniqueBattleGuid = Guid.NewGuid();
-
+                //Add the battle to the database
                 _battleRepository.Add(battle);
+
+                //Get the Teams that are participating
                 List<TeamBaseModel> teams = new List<TeamBaseModel>
                 {
                     _teamRepository.GetById(battle.TeamOneGuid),
@@ -198,7 +201,7 @@ namespace TableBallAPI.Controllers
                 };
 
                 List<PlayerBaseModel> players = new List<PlayerBaseModel>();
-
+                //Find the players from each team and reward/substract accordingly to who won
                 foreach (var team in teams)
                 {
                     var playerOne = _playerRepository.GetById(team.PlayerOne);
@@ -222,8 +225,9 @@ namespace TableBallAPI.Controllers
                     players.Add(playerOne);
                     players.Add(playerTwo);
                 }
+                //Update players with their new scores
                 _playerRepository.UpdateMultiple(players);
-
+                //Return the battle
                 return CreatedAtAction(nameof(GetBattle), battle);
             }
             else { return BadRequest(); }
