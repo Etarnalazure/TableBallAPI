@@ -17,7 +17,7 @@ namespace TableBallAPI.Models
         public Guid WinnerGuid { get; set; }
         //When the battle occured
         public DateTime BattleDate { get; set; } = DateTime.Now;
-
+        //For future use, incase battles can be set in the future
         public bool isDone { get; set; }
     }
 }
