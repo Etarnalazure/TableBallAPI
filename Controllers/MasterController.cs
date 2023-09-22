@@ -11,6 +11,7 @@ namespace TableBallAPI.Controllers
     [ApiController]
     public class MasterController : ControllerBase
     {
+
         private readonly IRepository<PlayerBaseModel> _playerRepository;
         private readonly IRepository<BattleBaseModel> _battleRepository;
         private readonly IRepository<TeamBaseModel> _teamRepository;
@@ -111,13 +112,13 @@ namespace TableBallAPI.Controllers
 
 
         #region Teams
-        [HttpGet("teams/GetTeams")]
+        [HttpGet("team/GetTeams")]
         public IEnumerable<TeamBaseModel> GetTeams()
         {
             return _teamRepository.GetAll();
         }
 
-        [HttpPost("teams/CreateTeam")]
+        [HttpPost("team/CreateTeam")]
         public IActionResult CreateTeam([FromBody] TeamBaseModel team)
         {
           
@@ -143,6 +144,18 @@ namespace TableBallAPI.Controllers
             }
             return BadRequest();
         }
+
+
+        [HttpDelete("team/Delete/{id}")]
+        public IActionResult DeleteTeam(Guid id)
+        {
+            var team = _teamRepository.GetById(id);
+            if (team == null)
+                return NotFound();
+            _teamRepository.Delete(id);
+            return Ok(team);
+        }
+
         #endregion
 
 
@@ -163,7 +176,11 @@ namespace TableBallAPI.Controllers
 
             return Ok(battle);
         }
-
+        /// <summary>
+        /// Creates a new battle. WinnerGuid is the guid of the team that won
+        /// </summary>
+        /// <param name="battle"></param>
+        /// <returns></returns>
         [HttpPost("battles/CreateBattle")]
         public IActionResult CreateBattle([FromBody] BattleBaseModel battle)
         {
@@ -186,7 +203,11 @@ namespace TableBallAPI.Controllers
                 {
                     var playerOne = _playerRepository.GetById(team.PlayerOne);
                     var playerTwo = _playerRepository.GetById(team.PlayerTwo);
-
+                    if(playerOne == null || playerTwo == null)
+                    { 
+                        //If Either is null, skip iteration
+                        continue;
+                    }
                     if (team.UniqueTeamGuid == battle.WinnerGuid)
                     {
                         playerOne.Handicap++;
