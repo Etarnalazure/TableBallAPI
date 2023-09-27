@@ -65,12 +65,23 @@ namespace TableBallAPI.Controllers
         [HttpPost("players/CreatePlayer")]
         public IActionResult CreatePlayer([FromBody] PlayerBaseModel player)
         {
-            //Ensure it does not use swagger default
-            player.UniquePlayerGuid = Guid.NewGuid();
-            //Ensure swagger does not ignore default value
-            player.Handicap = 10;
-            _playerRepository.Add(player);
-            return CreatedAtAction(nameof(GetPlayer), player);
+            try
+            {
+                //Ensure it does not use swagger default
+                player.UniquePlayerGuid = Guid.NewGuid();
+                //Ensure swagger does not ignore default value
+                player.Handicap = 10;
+                _playerRepository.Add(player);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                    // Log the exception (you may want to log this to a file or your logging system)
+                Console.WriteLine($"An error occurred: {ex}");
+
+                // Return an error message
+                return BadRequest();
+            }
         }
 
         [HttpPost("players/edit/{id}")]
