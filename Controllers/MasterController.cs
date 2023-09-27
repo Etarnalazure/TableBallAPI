@@ -87,26 +87,36 @@ namespace TableBallAPI.Controllers
         [HttpPost("players/edit/{id}")]
         public IActionResult EditPlayer(Guid id, [FromBody] PlayerBaseModel updatedPlayer)
         {
-            // Fetch the player by ID
-            var existingPlayer = _playerRepository.GetById(id);
-
-            if (existingPlayer == null)
+            try
             {
-                return NotFound();
+                // Fetch the player by ID
+                var existingPlayer = _playerRepository.GetById(id);
+
+                if (existingPlayer == null)
+                {
+                    return NotFound();
+                }
+
+                // Update the player's name/intials
+                existingPlayer.PlayerName = updatedPlayer.PlayerName;
+                existingPlayer.PlayerInitials = updatedPlayer.PlayerInitials;
+
+                //No cheating allowed
+                existingPlayer.Handicap = existingPlayer.Handicap;
+
+                // Update the player in the database
+                _playerRepository.Update(existingPlayer);
+
+                return Ok();
             }
+            catch (Exception ex)
+            {
+                    // Log the exception (you may want to log this to a file or your logging system)
+                Console.WriteLine($"An error occurred: {ex}");
 
-            // Update the player's name/intials
-            existingPlayer.PlayerName = updatedPlayer.PlayerName;
-            existingPlayer.PlayerInitials = updatedPlayer.PlayerInitials;
-
-            //No cheating allowed
-            existingPlayer.Handicap = existingPlayer.Handicap;
-
-            // Update the player in the database
-            _playerRepository.Update(existingPlayer);
-
-            // Return the updated player
-            return CreatedAtAction(nameof(GetPlayer), existingPlayer);
+                // Return an error message
+                return BadRequest();
+            }
         }
 
         [HttpGet("players/Search/{searchTerm}")]
@@ -133,25 +143,36 @@ namespace TableBallAPI.Controllers
         public IActionResult CreateTeam([FromBody] TeamBaseModel team)
         {
           //Make sure its not the same person twice
-            if(team.PlayerOne != team.PlayerTwo) { 
-                // Check if TeamTwoGuid exists in either TeamOneGuid or TeamTwoGuid
-                if (_teamRepository.GetAll().Any(existingTeam =>
-                    existingTeam.PlayerOne == team.PlayerTwo || existingTeam.PlayerTwo == team.PlayerTwo))
+            if(team.PlayerOne != team.PlayerTwo) {
+                try
                 {
-                    return BadRequest("A team with TeamTwoGuid already exists.");
-                }
+                    // Check if TeamTwoGuid exists in either TeamOneGuid or TeamTwoGuid
+                    if (_teamRepository.GetAll().Any(existingTeam =>
+                        existingTeam.PlayerOne == team.PlayerTwo || existingTeam.PlayerTwo == team.PlayerTwo))
+                    {
+                        return BadRequest("A team with TeamTwoGuid already exists.");
+                    }
 
-                // Check if TeamOneGuid exists in either TeamOneGuid or TeamTwoGuid
-                if (_teamRepository.GetAll().Any(existingTeam =>
-                    existingTeam.PlayerOne == team.PlayerOne || existingTeam.PlayerTwo == team.PlayerOne))
-                {
-                    return BadRequest("A team with TeamOneGuid already exists.");
-                }
-                //Ensure it does not use swagger default
-                team.UniqueTeamGuid = Guid.NewGuid();
+                    // Check if TeamOneGuid exists in either TeamOneGuid or TeamTwoGuid
+                    if (_teamRepository.GetAll().Any(existingTeam =>
+                        existingTeam.PlayerOne == team.PlayerOne || existingTeam.PlayerTwo == team.PlayerOne))
+                    {
+                        return BadRequest("A team with TeamOneGuid already exists.");
+                    }
+                    //Ensure it does not use swagger default
+                    team.UniqueTeamGuid = Guid.NewGuid();
             
-                _teamRepository.Add(team);
-                return CreatedAtAction(nameof(GetTeams), team);
+                    _teamRepository.Add(team);
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                        // Log the exception (you may want to log this to a file or your logging system)
+                    Console.WriteLine($"An error occurred: {ex}");
+
+                    // Return an error message
+                    return BadRequest();
+                }
             }
             return BadRequest();
         }
