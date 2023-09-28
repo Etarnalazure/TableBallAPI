@@ -216,53 +216,64 @@ namespace TableBallAPI.Controllers
         [HttpPost("battles/CreateBattle")]
         public IActionResult CreateBattle([FromBody] BattleBaseModel battle)
         {
-            //Ensure its not the same team and ensure the team that won is one of the participating teams
-            if ((battle.TeamTwoGuid != battle.TeamOneGuid) &&
-             (battle.TeamTwoGuid == battle.WinnerGuid || battle.TeamOneGuid == battle.WinnerGuid))
-            { 
-                //Ensure it does not use swagger default
-                battle.UniqueBattleGuid = Guid.NewGuid();
-                //Add the battle to the database
-                _battleRepository.Add(battle);
+            try
+            {
+                    //Ensure its not the same team and ensure the team that won is one of the participating teams
+                    if ((battle.TeamTwoGuid != battle.TeamOneGuid) &&
+                 (battle.TeamTwoGuid == battle.WinnerGuid || battle.TeamOneGuid == battle.WinnerGuid))
+                { 
+                    //Ensure it does not use swagger default
+                    battle.UniqueBattleGuid = Guid.NewGuid();
+                    //Add the battle to the database
+                    _battleRepository.Add(battle);
 
-                //Get the Teams that are participating
-                List<TeamBaseModel> teams = new List<TeamBaseModel>
-                {
-                    _teamRepository.GetById(battle.TeamOneGuid),
-                    _teamRepository.GetById(battle.TeamTwoGuid)
-                };
-
-                List<PlayerBaseModel> players = new List<PlayerBaseModel>();
-                //Find the players from each team and reward/substract accordingly to who won
-                foreach (var team in teams)
-                {
-                    var playerOne = _playerRepository.GetById(team.PlayerOne);
-                    var playerTwo = _playerRepository.GetById(team.PlayerTwo);
-                    if(playerOne == null || playerTwo == null)
-                    { 
-                        //If Either is null, skip iteration
-                        continue;
-                    }
-                    if (team.UniqueTeamGuid == battle.WinnerGuid)
+                    //Get the Teams that are participating
+                    List<TeamBaseModel> teams = new List<TeamBaseModel>
                     {
-                        playerOne.Handicap++;
-                        playerTwo.Handicap++;
-                    }
-                    else
-                    {
-                        playerOne.Handicap--;
-                        playerTwo.Handicap--;
-                    }
+                        _teamRepository.GetById(battle.TeamOneGuid),
+                        _teamRepository.GetById(battle.TeamTwoGuid)
+                    };
 
-                    players.Add(playerOne);
-                    players.Add(playerTwo);
+                    List<PlayerBaseModel> players = new List<PlayerBaseModel>();
+                    //Find the players from each team and reward/substract accordingly to who won
+                    foreach (var team in teams)
+                    {
+                        var playerOne = _playerRepository.GetById(team.PlayerOne);
+                        var playerTwo = _playerRepository.GetById(team.PlayerTwo);
+                        if(playerOne == null || playerTwo == null)
+                        { 
+                            //If Either is null, skip iteration
+                            continue;
+                        }
+                        if (team.UniqueTeamGuid == battle.WinnerGuid)
+                        {
+                            playerOne.Handicap++;
+                            playerTwo.Handicap++;
+                        }
+                        else
+                        {
+                            playerOne.Handicap--;
+                            playerTwo.Handicap--;
+                        }
+
+                        players.Add(playerOne);
+                        players.Add(playerTwo);
+                    }
+                    //Update players with their new scores
+                    _playerRepository.UpdateMultiple(players);
+                    //Return the battle
+                    return Ok("Battle created");
                 }
-                //Update players with their new scores
-                _playerRepository.UpdateMultiple(players);
-                //Return the battle
-                return CreatedAtAction(nameof(GetBattle), battle);
+                else { return BadRequest(); }
             }
-            else { return BadRequest(); }
+            catch (Exception ex)
+            {
+                // Log the exception (you may want to log this to a file or your logging system)
+                Console.WriteLine($"An error occurred: {ex}");
+
+                // Return an error message
+                return BadRequest();
+            }
         }
 
         #endregion
